@@ -76,9 +76,9 @@ impl App {
     /// * `amount`: column will add amount
     ///
     /// TODO: reload addition
-    fn column_add(&self, amount: usize) -> usize {
+    fn column_add(&self, amount: usize, open: bool) -> usize {
         let new_column = self.column.saturating_add(amount);
-        self.clamp_index(new_column)
+        self.clamp_index(new_column, open)
     }
 
     /// Helper function for savely subtract column with some value
@@ -88,9 +88,9 @@ impl App {
     /// * `amount`: column will minus amount
     ///
     /// TODO: reload subtraction
-    fn column_sub(&self, amount: usize) -> usize {
+    fn column_sub(&self, amount: usize, open: bool) -> usize {
         let new_column = self.column.saturating_sub(amount);
-        self.clamp_index(new_column)
+        self.clamp_index(new_column, open)
     }
 
     /// Save movement to left for cursor
@@ -98,8 +98,8 @@ impl App {
     /// # Arguments
     ///
     /// * `amount`: the amount of position move to left
-    pub fn move_left(&mut self, amount: usize) {
-        self.column = self.column_sub(amount);
+    pub fn move_left(&mut self, amount: usize, open: bool) {
+        self.column = self.column_sub(amount, open);
     }
 
     /// Save movement to right for cursor
@@ -107,8 +107,9 @@ impl App {
     /// # Arguments
     ///
     /// * `amount`: the amount of position move to right
-    pub fn move_right(&mut self, amount: usize) {
-        self.column = self.column_add(amount);
+    /// * `open`: if it is in a open interval
+    pub fn move_right(&mut self, amount: usize, open: bool) {
+        self.column = self.column_add(amount, open);
     }
 
     /// Helper Function to restrict the range of cursor
@@ -116,15 +117,12 @@ impl App {
     /// # Arguments
     ///
     /// * `new_column`: the value which needs restrict
+    /// * `open`: if it is in a open interval
     ///
     /// Range of cursor in Insert Mode: `0..=chars_of_input`
     /// Range of cursor in Normal/Operation Mode: ``0..chars_of_input``
-    fn clamp_index(&self, new_column: usize) -> usize {
-        let suffix: usize = match self.mode {
-            Mode::Insert => 0,
-            _ => 1,
-        };
-        new_column.clamp(0, self.input.chars().count().saturating_sub(suffix))
+    fn clamp_index(&self, new_column: usize, open: bool) -> usize {
+        new_column.clamp(0, self.input.chars().count().saturating_sub(open as usize))
     }
 
     /// Calculate the index of a character in &str
@@ -171,12 +169,16 @@ impl App {
         }
     }
 
-    pub fn insert_text(&mut self, input: &str, suffix: usize) {
-        let index = self.byte_index().saturating_sub(suffix);
+    pub fn insert_text(&mut self, input: &str, prepend: bool) {
+        self.move_right(prepend as usize, false);
+        let index = self.byte_index();
 
         // Iterate over the characters of the input
         self.input.insert_str(index, input);
-        self.move_right(input.chars().count())
+        self.move_right(input.chars().count() - 1, true);
+        if let Mode::Insert = self.mode {
+            self.move_right(1, false);
+        };
     }
 
     pub fn submit_message(&mut self) {
@@ -197,24 +199,24 @@ impl App {
                 }
                 KeyCode::Char('a') => {
                     self.mode = Mode::Insert;
-                    self.move_right(1);
+                    self.move_right(1, false);
                     Self::set_cursor_bar()?;
                 }
-                KeyCode::Left | KeyCode::Char('h') => self.move_left(1),
-                KeyCode::Right | KeyCode::Char('l') => self.move_right(1),
-                KeyCode::Char('p') => self.insert_text("Baka琪露诺", 1),
-                KeyCode::Char('P') => self.insert_text("Baka琪露诺", 0),
+                KeyCode::Left | KeyCode::Char('h') => self.move_left(1, true),
+                KeyCode::Right | KeyCode::Char('l') => self.move_right(1, true),
+                KeyCode::Char('p') => self.insert_text("Baka琪露诺", true),
+                KeyCode::Char('P') => self.insert_text("Baka琪露诺", false),
                 _ => {}
             },
             Mode::Insert if key.kind == KeyEventKind::Press => match key.code {
                 KeyCode::Enter => self.submit_message(),
-                KeyCode::Char(value) => self.insert_text(value.to_string().as_str(), 0),
-                KeyCode::Backspace => self.remove_char((self.column_sub(1), self.column)),
-                KeyCode::Left => self.move_left(1),
-                KeyCode::Right => self.move_right(1),
+                KeyCode::Char(value) => self.insert_text(value.to_string().as_str(), false),
+                KeyCode::Backspace => self.remove_char((self.column_sub(1, false), self.column)),
+                KeyCode::Left => self.move_left(1, false),
+                KeyCode::Right => self.move_right(1, false),
                 KeyCode::Esc => {
                     self.mode = Mode::Normal;
-                    self.move_left(1);
+                    self.move_left(1, true);
                     Self::set_cursor_block()?;
                 }
                 _ => {}
