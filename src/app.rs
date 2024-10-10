@@ -121,7 +121,7 @@ impl App {
     }
 
     pub fn insert_text(&mut self, input: &str, suffix: usize) {
-        let index = self.byte_index() + suffix;
+        let index = self.byte_index().saturating_sub(suffix);
 
         // Iterate over the characters of the input
         self.input.insert_str(index, input);
