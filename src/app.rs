@@ -57,16 +57,16 @@ impl App {
     }
 
     pub fn column_sub(&self, amount: usize) -> usize {
-        let new_column = self.column.saturating_sub(1);
+        let new_column = self.column.saturating_sub(amount);
         self.clamp_index(new_column)
     }
 
     pub fn move_left(&mut self) {
-        self.column = self.column_add(1);
+        self.column = self.column_sub(1);
     }
 
     pub fn move_right(&mut self) {
-        self.column = self.column_sub(1);
+        self.column = self.column_add(1);
     }
 
     pub fn clamp_index(&self, new_column: usize) -> usize {
@@ -116,14 +116,12 @@ impl App {
         }
     }
 
-    pub fn insert_text<T: AsRef<str>>(&mut self, input: T) {
+    pub fn insert_text(&mut self, input: char) {
         let index = self.byte_index();
 
         // Iterate over the characters of the input
-        for new_char in input.as_ref().chars() {
-            self.input.insert(index, new_char);
-            self.move_right();
-        }
+        self.input.insert(index, input);
+        self.move_right();
     }
 
     pub fn submit_message(&mut self) {
