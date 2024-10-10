@@ -57,40 +57,69 @@ impl App {
         }
     }
 
+    /// Set Cursor to Block (for normal mode)
     pub fn set_cursor_block() -> Result<()> {
         use crossterm::cursor::SetCursorStyle;
         Ok(queue!(stderr(), SetCursorStyle::SteadyBlock)?)
     }
 
+    /// Set Cursor to bar (for insert mode)
     pub fn set_cursor_bar() -> Result<()> {
         use crossterm::cursor::SetCursorStyle;
         Ok(queue!(stderr(), SetCursorStyle::SteadyBar)?)
     }
 
-    pub fn show_cursor() {
-        use crossterm::cursor::Show;
-        queue!(stderr(), Show).ok();
-    }
-
-    pub fn column_add(&self, amount: usize) -> usize {
+    /// Helper function for savely add column addition with some value
+    ///
+    /// # Arguments
+    ///
+    /// * `amount`: column will add amount
+    ///
+    /// TODO: reload addition
+    fn column_add(&self, amount: usize) -> usize {
         let new_column = self.column.saturating_add(amount);
         self.clamp_index(new_column)
     }
 
-    pub fn column_sub(&self, amount: usize) -> usize {
+    /// Helper function for savely subtract column with some value
+    ///
+    /// # Arguments
+    ///
+    /// * `amount`: column will minus amount
+    ///
+    /// TODO: reload subtraction
+    fn column_sub(&self, amount: usize) -> usize {
         let new_column = self.column.saturating_sub(amount);
         self.clamp_index(new_column)
     }
 
+    /// Save movement to left for cursor
+    ///
+    /// # Arguments
+    ///
+    /// * `amount`: the amount of position move to left
     pub fn move_left(&mut self, amount: usize) {
         self.column = self.column_sub(amount);
     }
 
+    /// Save movement to right for cursor
+    ///
+    /// # Arguments
+    ///
+    /// * `amount`: the amount of position move to right
     pub fn move_right(&mut self, amount: usize) {
         self.column = self.column_add(amount);
     }
 
-    pub fn clamp_index(&self, new_column: usize) -> usize {
+    /// Helper Function to restrict the range of cursor
+    ///
+    /// # Arguments
+    ///
+    /// * `new_column`: the value which needs restrict
+    ///
+    /// Range of cursor in Insert Mode: `0..=chars_of_input`
+    /// Range of cursor in Normal/Operation Mode: ``0..chars_of_input``
+    fn clamp_index(&self, new_column: usize) -> usize {
         let suffix: usize = match self.mode {
             Mode::Insert => 0,
             _ => 1,
@@ -98,6 +127,7 @@ impl App {
         new_column.clamp(0, self.input.chars().count().saturating_sub(suffix))
     }
 
+    /// Calculate the index of a character in &str
     pub fn byte_index(&self) -> usize {
         self.input
             .char_indices()
