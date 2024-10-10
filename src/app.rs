@@ -1,5 +1,8 @@
-use std::ops::Range;
+use std::io::stderr;
 
+use color_eyre::Result;
+use crossterm::event::{KeyCode, KeyEvent, KeyEventKind};
+use crossterm::{execute, queue};
 pub enum Mode {
     Normal,
     Operate(Operation),
@@ -37,6 +40,8 @@ pub struct App {
     pub column: usize,
     /// Total Message
     pub message: Vec<String>,
+    /// Detect Key Pressed
+    pub key_pressed: String,
 }
 
 impl App {
@@ -48,7 +53,23 @@ impl App {
             exit: false,
             column: 0,
             message: Vec::new(),
+            key_pressed: String::new(),
         }
+    }
+
+    pub fn set_cursor_block() -> Result<()> {
+        use crossterm::cursor::SetCursorStyle;
+        Ok(queue!(stderr(), SetCursorStyle::SteadyBlock)?)
+    }
+
+    pub fn set_cursor_bar() -> Result<()> {
+        use crossterm::cursor::SetCursorStyle;
+        Ok(queue!(stderr(), SetCursorStyle::SteadyBar)?)
+    }
+
+    pub fn show_cursor() {
+        use crossterm::cursor::Show;
+        queue!(stderr(), Show).ok();
     }
 
     pub fn column_add(&self, amount: usize) -> usize {
@@ -132,5 +153,46 @@ impl App {
         self.message.push(self.input.clone());
         self.input.clear();
         self.column = 0;
+    }
+
+    pub fn handle_key(&mut self, key: KeyEvent) -> Result<()> {
+        self.key_pressed = key.code.to_string();
+        match self.mode {
+            // TODO: complete Normal Mode
+            Mode::Normal => match key.code {
+                KeyCode::Char('q') => self.exit = true,
+                KeyCode::Char('i') => {
+                    self.mode = Mode::Insert;
+                    Self::set_cursor_bar()?;
+                }
+                KeyCode::Char('a') => {
+                    self.mode = Mode::Insert;
+                    self.move_right(1);
+                    Self::set_cursor_bar()?;
+                }
+                KeyCode::Left | KeyCode::Char('h') => self.move_left(1),
+                KeyCode::Right | KeyCode::Char('l') => self.move_right(1),
+                KeyCode::Char('p') => self.insert_text("Baka琪露诺", 1),
+                KeyCode::Char('P') => self.insert_text("Baka琪露诺", 0),
+                _ => {}
+            },
+            Mode::Insert if key.kind == KeyEventKind::Press => match key.code {
+                KeyCode::Enter => self.submit_message(),
+                KeyCode::Char(value) => self.insert_text(value.to_string().as_str(), 0),
+                KeyCode::Backspace => self.remove_char((self.column_sub(1), self.column)),
+                KeyCode::Left => self.move_left(1),
+                KeyCode::Right => self.move_right(1),
+                KeyCode::Esc => {
+                    self.mode = Mode::Normal;
+                    self.move_left(1);
+                    Self::set_cursor_block()?;
+                }
+                _ => {}
+            },
+            Mode::Insert => {}
+            // TODO: add other modes
+            _ => {}
+        };
+        Ok(())
     }
 }
