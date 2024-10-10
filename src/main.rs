@@ -57,6 +57,7 @@ fn run_app(terminal: &mut DefaultTerminal, app: &mut App) -> Result<()> {
                     KeyCode::Right => app.move_right(),
                     KeyCode::Esc => {
                         app.mode = Mode::Normal;
+                        app.move_left();
                         set_cursor_block()?;
                     }
                     _ => {}

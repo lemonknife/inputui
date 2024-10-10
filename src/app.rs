@@ -70,7 +70,11 @@ impl App {
     }
 
     pub fn clamp_index(&self, new_column: usize) -> usize {
-        new_column.clamp(0, self.input.chars().count())
+        let suffix: usize = match self.mode {
+            Mode::Insert => 0,
+            _ => 1,
+        };
+        new_column.clamp(0, self.input.chars().count().saturating_sub(suffix))
     }
 
     pub fn byte_index(&self) -> usize {
