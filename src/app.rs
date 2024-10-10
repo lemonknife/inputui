@@ -61,12 +61,12 @@ impl App {
         self.clamp_index(new_column)
     }
 
-    pub fn move_left(&mut self) {
-        self.column = self.column_sub(1);
+    pub fn move_left(&mut self, amount: usize) {
+        self.column = self.column_sub(amount);
     }
 
-    pub fn move_right(&mut self) {
-        self.column = self.column_add(1);
+    pub fn move_right(&mut self, amount: usize) {
+        self.column = self.column_add(amount);
     }
 
     pub fn clamp_index(&self, new_column: usize) -> usize {
@@ -120,12 +120,12 @@ impl App {
         }
     }
 
-    pub fn insert_text(&mut self, input: char) {
-        let index = self.byte_index();
+    pub fn insert_text(&mut self, input: &str, suffix: usize) {
+        let index = self.byte_index() + suffix;
 
         // Iterate over the characters of the input
-        self.input.insert(index, input);
-        self.move_right();
+        self.input.insert_str(index, input);
+        self.move_right(input.chars().count())
     }
 
     pub fn submit_message(&mut self) {

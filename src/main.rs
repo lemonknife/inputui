@@ -45,19 +45,26 @@ fn run_app(terminal: &mut DefaultTerminal, app: &mut App) -> Result<()> {
                         app.mode = Mode::Insert;
                         set_cursor_bar()?;
                     }
-                    KeyCode::Left => app.move_left(),
-                    KeyCode::Right => app.move_right(),
+                    KeyCode::Char('a') => {
+                        app.mode = Mode::Insert;
+                        app.move_right(1);
+                        set_cursor_bar()?;
+                    }
+                    KeyCode::Left | KeyCode::Char('h') => app.move_left(1),
+                    KeyCode::Right | KeyCode::Char('l') => app.move_right(1),
+                    KeyCode::Char('p') => app.insert_text("Baka", 1),
+                    KeyCode::Char('P') => app.insert_text("Baka", 0),
                     _ => {}
                 },
                 Mode::Insert if key.kind == KeyEventKind::Press => match key.code {
                     KeyCode::Enter => app.submit_message(),
-                    KeyCode::Char(value) => app.insert_text(value),
+                    KeyCode::Char(value) => app.insert_text(value.to_string().as_str(), 0),
                     KeyCode::Backspace => app.remove_char((app.column_sub(1), app.column)),
-                    KeyCode::Left => app.move_left(),
-                    KeyCode::Right => app.move_right(),
+                    KeyCode::Left => app.move_left(1),
+                    KeyCode::Right => app.move_right(1),
                     KeyCode::Esc => {
                         app.mode = Mode::Normal;
-                        app.move_left();
+                        app.move_left(1);
                         set_cursor_block()?;
                     }
                     _ => {}
