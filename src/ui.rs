@@ -103,12 +103,12 @@ pub fn ui(frame: &mut Frame, app: &App) {
         ),
         match &app.mode {
             Mode::Normal => {
-                Span::styled("", Style::default().bg(Color::Black).fg(Color::DarkGray))
+                Span::styled(" ", Style::default().bg(Color::Black).fg(Color::DarkGray))
             }
             Mode::Insert => {
-                Span::styled("", Style::default().bg(Color::Black).fg(Color::DarkGray))
+                Span::styled(" ", Style::default().bg(Color::Black).fg(Color::DarkGray))
             }
-            _ => Span::styled("", Style::default().bg(Color::Black)),
+            _ => Span::styled(" ", Style::default().bg(Color::Black)),
         },
         match &app.mode {
             Mode::Normal => Span::styled(
