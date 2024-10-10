@@ -83,31 +83,46 @@ impl App {
 
     /// Remove the char
     ///
-    /// Example:
+    /// # Arguments
+    ///
+    /// * `start`: start removing characters
+    /// * `end`: end remove characters (not include end_index character)
+    ///
+    /// # Examples
     /// For backspace key:
     /// ```
-    /// self.delete_char(self.column_sub(1)), self.column)
+    /// self.remove_char((self.column_sub(1)), self.column))
     /// ```
     /// For delete key:
     /// ```
-    /// self.delete_char(self.column, self.column_add(1)))
+    /// self.remove_char((self.column, self.column_add(1)))
     /// ```
     /// For deleting range:
     /// ```
     /// // "123" -> "3"
     /// // start_index == 0
     /// // end_index == 1
-    /// self.delete_char(start_index, end_index + 1)
+    /// self.remove_char((start_index, end_index + 1))
     /// ```
-    pub fn delete_char(&mut self, range: Range<usize>) {
-        if range.start != range.end {
-            let left = self.input.chars().take(range.start);
-            let right = self.input.chars().skip(range.end);
+    pub fn remove_char(&mut self, (start, end): (usize, usize)) {
+        if start != end {
+            let left = self.input.chars().take(start);
+            let right = self.input.chars().skip(end);
 
             self.input = left.chain(right).collect();
 
             // TODO: need validation
-            self.column = range.start;
+            self.column = start;
+        }
+    }
+
+    pub fn insert_text<T: AsRef<str>>(&mut self, input: T) {
+        let index = self.byte_index();
+
+        // Iterate over the characters of the input
+        for new_char in input.as_ref().chars() {
+            self.input.insert(index, new_char);
+            self.move_right();
         }
     }
 
